@@ -7,3 +7,15 @@ Jinja2==3.1.4
 MarkupSafe==2.1.5
 packaging==24.1
 Werkzeug==3.0.3
+tkinter
+dlib
+csv
+numpy
+cv2
+pandas
+os
+logging
+requests
+datetime 
+messagebox
+timezone
