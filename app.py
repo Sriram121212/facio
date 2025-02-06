@@ -16,10 +16,9 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app) 
 
-
 @app.route('/')
 def hello_world():
-    return 'Hello, World!!'
+    return 'Hello, World!'
 
 
 @app.route('/sakthi', methods=['GET'])
@@ -28,114 +27,104 @@ def sakthi():
     return jsonify({"message": "Hello, Sakthi!"})
 
 
+
 @app.route("/traning")
-def dhoni():
-    window=tk.Tk()
-    window.title("Face recognition system")
-    def Training():
-        # Path of cropped faces
-        path_images_from_camera = "data/data_faces_from_camera/"
+def traning():
+    # Path of cropped faces
+    path_images_from_camera = "C:\\Users\\USER\\Desktop\\24QSSD007\\Facio\\python-backend\\data\\data_faces_from_camera"
 
-        # Use Dlib's frontal face detector
-        detector = dlib.get_frontal_face_detector()
+    # Use Dlib's frontal face detector
+    detector = dlib.get_frontal_face_detector()
 
-        # Get face landmarks
-        predictor = dlib.shape_predictor('data/data_dlib/shape_predictor_68_face_landmarks.dat')
+    # Get face landmarks
+    predictor = dlib.shape_predictor('C:\\Users\\USER\\Desktop\\24QSSD007\\Facio\\python-backend\\data\\data_dlib\\shape_predictor_68_face_landmarks.dat')
 
-        # Use Dlib's ResNet50 model for 128D face descriptor
-        face_reco_model = dlib.face_recognition_model_v1("data/data_dlib/dlib_face_recognition_resnet_model_v1.dat")
+    # Use Dlib's ResNet50 model for 128D face descriptor
+    face_reco_model = dlib.face_recognition_model_v1("C:\\Users\\USER\\Desktop\\24QSSD007\\Facio\\python-backend\\data\\data_dlib\\dlib_face_recognition_resnet_model_v1.dat")
 
+    def return_128d_features(path_img):
+        """Extracts 128D facial features from an image."""
+        img_rd = cv2.imread(path_img)
+        faces = detector(img_rd, 1)
 
-        def return_128d_features(path_img):
-            """Extracts 128D facial features from an image."""
-            img_rd = cv2.imread(path_img)
-            faces = detector(img_rd, 1)
+        if len(faces) != 0:
+            shape = predictor(img_rd, faces[0])
+            face_descriptor = face_reco_model.compute_face_descriptor(img_rd, shape)
+        else:
+            face_descriptor = 0  # No face detected
+        return face_descriptor
 
-            if len(faces) != 0:
-                shape = predictor(img_rd, faces[0])
-                face_descriptor = face_reco_model.compute_face_descriptor(img_rd, shape)
-            else:
-                face_descriptor = 0  # No face detected
-            return face_descriptor
+    def return_features_mean_personX(path_face_personX):
+        """Computes the average (mean) of 128D face descriptors for a person."""
+        features_list_personX = []
+        photos_list = os.listdir(path_face_personX)
 
+        for photo in photos_list:
+            features_128d = return_128d_features(os.path.join(path_face_personX, photo))
+            if features_128d != 0:
+                features_list_personX.append(features_128d)
 
-        def return_features_mean_personX(path_face_personX):
-            """Computes the average (mean) of 128D face descriptors for a person."""
-            features_list_personX = []
-            photos_list = os.listdir(path_face_personX)
+        if features_list_personX:
+            return np.array(features_list_personX, dtype=object).mean(axis=0)
+        else:
+            return np.zeros(128, dtype=object, order='C')
 
-            for photo in photos_list:
-                features_128d = return_128d_features(os.path.join(path_face_personX, photo))
-                if features_128d != 0:
-                    features_list_personX.append(features_128d)
+    def get_existing_employees(csv_path):
+        """Reads existing employees from the CSV file to avoid duplicates."""
+        if not os.path.exists(csv_path):
+            return set()  # If file doesn't exist, return an empty set
 
-            if features_list_personX:
-                return np.array(features_list_personX, dtype=object).mean(axis=0)
-            else:
-                return np.zeros(128, dtype=object, order='C')
+        existing_names = set()
+        with open(csv_path, "r", newline="") as csvfile:
+            reader = csv.reader(csvfile)
+            for row in reader:
+                if row:
+                    existing_names.add(row[0])  # First column is the employee name
+        return existing_names
 
+    def main():
+        logging.basicConfig(level=logging.INFO)
+        csv_path = "C:\\Users\\USER\\Desktop\\24QSSD007\\Facio\\python-backend\\data\\features_all.csv"
 
-        def get_existing_employees(csv_path):
-            """Reads existing employees from the CSV file to avoid duplicates."""
-            if not os.path.exists(csv_path):
-                return set()  # If file doesn't exist, return an empty set
+        # Get list of existing employees
+        existing_names = get_existing_employees(csv_path)
 
-            existing_names = set()
-            with open(csv_path, "r", newline="") as csvfile:
-                reader = csv.reader(csvfile)
-                for row in reader:
-                    if row:
-                        existing_names.add(row[0])  # First column is the employee name
-            return existing_names
+        # Get all persons from dataset
+        person_list = sorted(os.listdir(path_images_from_camera))
 
+        with open(csv_path, "a", newline="") as csvfile:  # Open in append mode
+            writer = csv.writer(csvfile)
 
-        def main():
-            logging.basicConfig(level=logging.INFO)
-            csv_path = "data/features_all.csv"
+            for person in person_list:
+                # Extract employee name from folder
+                if len(person.split('_', 2)) == 2:
+                    person_name = person  # "person_x"
+                else:
+                    person_name = person.split('_', 2)[-1]  # "person_x_tom"
 
-            # Get list of existing employees
-            existing_names = get_existing_employees(csv_path)
+                # Skip if employee already exists
+                if person_name in existing_names:
+                    logging.info(f"Skipping {person_name} (already in CSV)")
+                    continue
 
-            # Get all persons from dataset
-            person_list = sorted(os.listdir(path_images_from_camera))
+                logging.info(f"Processing new employee: {person_name}")
 
-            with open(csv_path, "a", newline="") as csvfile:  # Open in append mode
-                writer = csv.writer(csvfile)
+                features_mean_personX = return_features_mean_personX(os.path.join(path_images_from_camera, person))
+                features_mean_personX = np.insert(features_mean_personX, 0, person_name, axis=0)  # Insert name at start
 
-                for person in person_list:
-                    # Extract employee name from folder
-                    if len(person.split('_', 2)) == 2:
-                        person_name = person  # "person_x"
-                    else:
-                        person_name = person.split('_', 2)[-1]  # "person_x_tom"
+                writer.writerow(features_mean_personX)
+                logging.info(f"Added new employee: {person_name}")
 
-                    # Skip if employee already exists
-                    if person_name in existing_names:
-                        logging.info(f"Skipping {person_name} (already in CSV)")
-                        continue
-
-                    logging.info(f"Processing new employee: {person_name}")
-
-                    features_mean_personX = return_features_mean_personX(os.path.join(path_images_from_camera, person))
-                    features_mean_personX = np.insert(features_mean_personX, 0, person_name, axis=0)  # Insert name at start
-
-                    writer.writerow(features_mean_personX)
-                    logging.info(f"Added new employee: {person_name}")
-
-            logging.info(f"Updated features saved in {csv_path}")
-
-
-        if __name__ == '__main__':
-            main()
-        messagebox.showinfo('Result','Training dataset completed!!!')
-
-    b1=tk.Button(window,text="TRAINING",font=("Times New Roman",20),bg='green',fg='white',command=Training)
-    b1.grid(column=1, row=4)
+        logging.info(f"Updated features saved in {csv_path}")
 
     
-    window.geometry("800x200")
-    window.mainloop()
-    return "Face Trining completed!" 
+    main()
+    return "Face Training completed!"
+
+
+
+
+
 @app.route("/detect")
 def detect():
     window=tk.Tk()
