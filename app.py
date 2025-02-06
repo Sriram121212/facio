@@ -10,21 +10,25 @@ import requests
 from datetime import datetime, time,timezone
 from tkinter import messagebox
 import csv
-
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app) 
+
 
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
 
 
-@app.route('/sakthi')
+@app.route('/sakthi', methods=['GET'])
 def sakthi():
-    return 'Hello, sakthi!'
+    print("Hello, Sakthi!")
+    return jsonify({"message": "Hello, Sakthi!"})
 
 
-@app.route("/dhoni")
+@app.route("/traning")
 def dhoni():
     window=tk.Tk()
     window.title("Face recognition system")

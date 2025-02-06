@@ -25,9 +25,9 @@ Jinja2==3.1.4
 MarkupSafe==2.1.5
 packaging==24.1
 Werkzeug==3.0.3
-dlib
+dlib==19.24.6
 numpy
-opencv-python==4.10.0
+opencv-python==4.10.0.84
 pandas
 requests
 
