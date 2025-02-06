@@ -10,6 +10,6 @@ numpy
 opencv-python==4.10.0.84
 pandas
 requests
-flask_cors=5.0.0
+flask_cors==5.0.0
 
 
