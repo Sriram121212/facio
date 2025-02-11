@@ -296,7 +296,7 @@ def detect():
             cv2.destroyAllWindows()
 
         def run(self):
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture("rtsp://admin:admin@192.168.0.5")
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
             self.process(cap)
@@ -309,6 +309,22 @@ def detect():
 
   
     return "Face detection completed!" 
+
+
+@app.route("/recon")
+def get_face_database(self):
+        if os.path.exists("data/features_all.csv"):
+            csv_rd = pd.read_csv("data/features_all.csv", header=None)
+            self.face_name_known_list = csv_rd.iloc[:, 0].tolist()
+            self.face_feature_known_list = csv_rd.iloc[:, 1:].values
+            logging.info(f"Loaded {len(self.face_name_known_list)} faces from database")
+            print(csv_rd)
+            return True
+        else:
+            logging.warning("Face database not found!")
+            return False
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
